@@ -104,46 +104,48 @@ document.addEventListener('DOMContentLoaded', () => {
          modal = document.querySelector('.modal'),                  //                весь блок с modal
          modalCloseBtn = document.querySelector('[data-close]');    //                триггер на закрытие
 
-   modalTrigger.forEach(btn => {
-      btn.addEventListener('click', openModal);
+   modalTrigger.forEach(btn => {                                    //делаем перебор для триггеров
+      btn.addEventListener('click', openModal);                     //при нажатии на кнопку активируем функцию openModal
    });
 
-   function closeModal() {
-      modal.classList.add('hide');
-      modal.classList.remove('show');
-      document.body.style.overflow = '';
+   function closeModal() {                                          //функция закрыия модального окна
+      modal.classList.add('hide');                                  //добавляем класс 'скрыть'
+      modal.classList.remove('show');                               //убираем класс 'показать'
+      document.body.style.overflow = '';                            //включаем прокрутку
    }
 
-   function openModal() {
-      modal.classList.add('show');
-      modal.classList.remove('hide');
-      document.body.style.overflow = 'hidden';
-      clearInterval(modalTimerId);
+   function openModal() {                                           //функция открытия модального окна
+      modal.classList.add('show');                                  //добавляем класс 'показать'
+      modal.classList.remove('hide');                               //убираем класс 'скрыть'
+      document.body.style.overflow = 'hidden';                      //отключаем прокрутку
+      clearInterval(modalTimerId);                                  //отключаем таймер, если пользователь сам открыл окно
    }
 
-   modalCloseBtn.addEventListener('click', closeModal);
+   modalCloseBtn.addEventListener('click', closeModal);             //при нажатии на кн откл сработате ф-я closeModal
 
-   modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
+   modal.addEventListener('click', (e) => {                         //если тыкать на подушку, отключается окно
+      if (e.target === modal) {                                     //если эл-т по которому тыкают равер всему блоку modal
          closeModal();
       }
    });
 
-   document.addEventListener('keydown', (e) => {
-      if (e.code === "Escape" && modal.classList.contains('show')) { 
+   document.addEventListener('keydown', (e) => {                    //по нажатии кнопки 
+      if (e.code === "Escape" && modal.classList.contains('show')) { //escape и modal имеет класс show закрыть окно
          closeModal();
       }
    });
 
-   const modalTimerId = setTimeout(openModal, 3000);
+   const modalTimerId = setTimeout(openModal, 3000);                //включать окно после 3сек после открытия сайта
 
-   function showModalByScroll() {
+   function showModalByScroll() {                                   //окрыть окно при доскролле до низа сайта
       if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight) {
-         openModal();
-         window.removeEventListener('scroll', showModalByScroll);
+         openModal();                                               //если высота скролла+высота окна = всей высоте сайта
+         window.removeEventListener('scroll', showModalByScroll);   //при скролле ЗАКРЫТЬ окно, после одного открытия
       }
    }
-   window.addEventListener('scroll', showModalByScroll);
+   window.addEventListener('scroll', showModalByScroll);            //открыть окно, вызов (ссылка) на функцию
 
 
+
+   
 });
