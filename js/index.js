@@ -189,6 +189,49 @@ document.addEventListener('DOMContentLoaded', () => {
       }
    }
 
+   //карточки с сервера  GET
+   const getResource = async (url) => {    
+      const res = await fetch(url);
+
+      if (!res.ok) {
+         throw new Error(`Could not fetch ${url}, status: ${res.status}`); //получение ошибки статус и юрл
+      }
+      return await res.json();
+   };
+
+   getResource('http://localhost:3000/menu')
+      .then(data => {
+         data.forEach(({img, altimg, title, descr, price}) => {
+            new MenuCard(img, altimg, title, descr, price, ".menu .container").render();
+         });
+      });
+   
+
+      //карточки с сервера, другой вар, попроще
+      // getResource('http://localhost:3000/menu')
+    //     .then(data => createCard(data));
+
+    // function createCard(data) {
+    //     data.forEach(({img, altimg, title, descr, price}) => {
+    //         const element = document.createElement('div');
+
+    //         element.classList.add("menu__item");
+
+    //         element.innerHTML = `
+    //             <img src=${img} alt=${altimg}>
+    //             <h3 class="menu__item-subtitle">${title}</h3>
+    //             <div class="menu__item-descr">${descr}</div>
+    //             <div class="menu__item-divider"></div>
+    //             <div class="menu__item-price">
+    //                 <div class="menu__item-cost">Цена:</div>
+    //                 <div class="menu__item-total"><span>${price}</span> грн/день</div>
+    //             </div>
+    //         `;
+    //         document.querySelector(".menu .container").append(element);
+    //     });
+    // }
+
+  /* //продолжение карточки без сервера
   new MenuCard(                                                     //вызываем наш класс с методом рендер
       "img/tabs/vegy.jpg",
       "vegy",
@@ -214,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
       21,
       ".menu .container"
-  ).render();                                                       //все, получаем карточки без html
+  ).render();                                                       //все, получаем карточки без html */
 
 
    //Forms - отправка и получение данных с сервера
@@ -227,8 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
       failure: 'Что-то пошло не так...',
    }
 
-   forms.forEach(item => {                          //под ф-ии подвязать форму postData
-      postData(item);
+   forms.forEach(item => {                          //под ф-ии подвязать форму bindData
+      bindData(item);
    });
 
 
@@ -297,34 +340,56 @@ document.addEventListener('DOMContentLoaded', () => {
       });
    } */
 
+   //json - постим на сервер  POST
+   const postData = async (url, data) => {    //исп async/await
+      const res = await fetch(url, {
+         method: 'POST',
+         headers: {
+            'Content-Type': 'application/json'
+         },
+         body: data
+      });
+
+      return await res.json();
+   };
+
+
+
    // переписанная функция postData с помощью API, все пояснения выше
-
-   function postData(form) {
+   function bindData(form) {
       form.addEventListener('submit', (e) => {
-          e.preventDefault();
+         e.preventDefault();
 
-          let statusMessage = document.createElement('img');
-          statusMessage.src = message.loading;
-          statusMessage.style.cssText = `
-              display: block;
-              margin: 0 auto;
-          `;
-          form.insertAdjacentElement('afterend', statusMessage);
-      
-          const formData = new FormData(form);
+         let statusMessage = document.createElement('img');
+         statusMessage.src = message.loading;
+         statusMessage.style.cssText = `
+            display: block;
+            margin: 0 auto;
+         `;
+         form.insertAdjacentElement('afterend', statusMessage);
+   
+         const formData = new FormData(form);
 
-          const object = {};
-          formData.forEach(function(value, key){
-              object[key] = value;
-          });
+         /* const object = {};
+         formData.forEach(function(value, key){
+            object[key] = value;
+         }); */
 
-          fetch('server.php', {                            // добавляем fetch, используем промисы
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(object)
-          }).then(data => {
+         const json = JSON.stringify(object.fromEntries(formData.entries()));
+         //объект переводим в массивы, потом в объекты, потом делаем их json
+
+         /*  fetch('server.php', {                            // добавляем fetch, используем промисы
+               method: 'POST',
+               headers: {
+                     'Content-Type': 'application/json'
+               },
+               body: JSON.stringify(object)
+          }) */
+
+
+          postData('http://localhost:3000/requests', json) //переписали fetch функцией, она выше
+          //изменили 1 аргумент, вместо server.php - http://localhost:3000/requests
+          .then(data => {
               console.log(data);
               showThanksModal(message.success);
               statusMessage.remove();
@@ -366,8 +431,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
    }
 
+   fetch('http://localhost:3000/menu')
+      .then(data => data.json())
+      .then(res => console.log(res));
+   
 
 
+   //Slider
+   const slider = document.querySelectorAll('.offer__slide'),
+         prev = 
 
 
 
