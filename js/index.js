@@ -95,8 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
    // Modal
 
    const modalTrigger = document.querySelectorAll('[data-modal]'),  //забираем с html триггер на открытие
-         modal = document.querySelector('.modal'),                  //                весь блок с modal
-         modalCloseBtn = document.querySelector('[data-close]');    //                триггер на закрытие
+         modal = document.querySelector('.modal');                  //                весь блок с modal
+         /* modalCloseBtn = document.querySelector('[data-close]');    //   триггер на закрытие, удалили, ~чтобы работало с любыми крестиками */
 
    modalTrigger.forEach(btn => {                                    //делаем перебор для триггеров
       btn.addEventListener('click', openModal);                     //при нажатии на кнопку активируем функцию openModal
@@ -115,10 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
       clearInterval(modalTimerId);                                  //отключаем таймер, если пользователь сам открыл окно
    }
 
-   modalCloseBtn.addEventListener('click', closeModal);             //при нажатии на кн откл сработате ф-я closeModal
+   /* modalCloseBtn.addEventListener('click', closeModal);  тож удалили, чтобы везде работало            //при нажатии на кн откл сработате ф-я closeModal */
 
    modal.addEventListener('click', (e) => {                         //если тыкать на подушку, отключается окно
-      if (e.target === modal) {                                     //если эл-т по которому тыкают равер всему блоку modal
+      if (e.target === modal || e.target.getAttribute('data-close') == '') {                //если эл-т по которому тыкают равер всему блоку modal
+         // || e.target.getAttribute('data-close') == '' - чтобы со всеми работало
          closeModal();
       }
    });
@@ -130,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
    });
 
 
-   //закомментировали, чтобы не мешало
-   //const modalTimerId = setTimeout(openModal, 3000);                //включать окно после 3сек после открытия сайта
+   
+   const modalTimerId = setTimeout(openModal, 50000);                //включать окно после 3сек после открытия сайта
 
    function showModalByScroll() {                                   //окрыть окно при доскролле до низа сайта
       if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight) {
@@ -221,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
    const forms = document.querySelectorAll('form');
 
    const message = {                                 //сообщения для выведения пользователю о статусе
-      loading: 'Загрузка...',
+      loading: 'img/form/spinner.svg',             //картинка вместо загрузка...
       sucsess: 'Спасибо! Скоро мы с вами свяжемся',
       failure: 'Что-то пошло не так...',
    }
@@ -237,10 +238,19 @@ document.addEventListener('DOMContentLoaded', () => {
       form.addEventListener('submit', (e) => {       //при отправке формы
          e.preventDefault();                         //отключение стандартного поведения
 
-         let statusMessege = document.createElement('div'); //создание дива для сообщений message
-         statusMessege.classList.add('status');
-         statusMessege.textContent = message.loading;
-         form.appendChild(statusMessege);                 //выведение сообщения 
+         let statusMessege = document.createElement('img'); //создание дива для сообщений message или img для картинки
+         /* statusMessege.classList.add('status'); //до */
+         statusMessege.src = message.loading;       //после
+         /* statusMessege.textContent = message.loading;   // до*/
+         statusMessege.style.cssText = `
+            display: block;
+            margin: 0 auto;
+            margin-top: 15px;
+         `;                                          //можно в css добавить стили, а здесь просто добавлять класс
+         /* form.appendChild(statusMessege);                 //выведение сообщения */ 
+         form.insertAdjacentElement('afterend', statusMessege);
+
+
 
          const request = new XMLHttpRequest();       //запрос на сервер, 
          request.open('POST', 'server.php');         //указание пути
@@ -270,19 +280,50 @@ document.addEventListener('DOMContentLoaded', () => {
          request.addEventListener('load', () => {    //обр. событ для отправки запроса
             if (request.status === 200) {
                console.log(request.response);
-               statusMessege.textContent = message.sucsess;  //сообщение, когда все готово  
+               /* statusMessege.textContent = message.sucsess;  //сообщение, когда все готово */  
+               showThanksModal(message.sucsess);             //создали ф-ю в след шаге
                form.reset();                                 //очистить форму
-               setTimeout(() => {
+               /* setTimeout(() => {
                   statusMessege.remove();                   //убрать сообщение
-               }, 2000);
+               }, 2000);   в след пункте убираем таймаут//*/
+               statusMessege.remove();
             }  else {
-               statusMessege.textContent = message.failure; //если неудачно-сообщение
+               /* statusMessege.textContent = message.failure; //если неудачно-сообщение */
+               showThanksModal(message.failure);           //создали ф-ю в след шаге
             }
          });
       });
    }
 
 
+   //~Красивое благодарсвенное окно
+
+   function showThanksModal(message) {                            //показ благодарности в модальном окне
+      const prevModalDialog = document.querySelector('.modal__dialog'); //забираем все модальное окно
+
+      prevModalDialog.classList.add('hide');              //Доб класс скрывающий контент модального окна
+
+      openModal();                                       //вызываем ф-ю открытия модального окна
+      const thanksModal = document.createElement('div');
+      thanksModal.classList.add('modal__dialog');       //переиспользуем классы
+      thanksModal.innerHTML =   `                       
+         <div class="modal__content">
+            <div class="modal__clothe" data-clothe></div>
+            <div class="modal__title">${message}</div>
+         </div>
+      `;                                               //доб новый контент
+
+      document.querySelector('.modal').append(thanksModal); //'заапендить' новое диалоговое окно
+
+      setTimeout(() => {              //чтобы через время это исчезало и появлялось то диалоговое окно
+         thanksModal.remove();        //просто удаляем, потом может заново сгенерироваться
+         prevModalDialog.classList.add('show');  //для высвеч того окна
+         prevModalDialog.classList.remove('hide');
+         closeModal();               //чтобы не мешало, просто закрываем
+
+      }, 4000)
+
+   }
 
 
 
