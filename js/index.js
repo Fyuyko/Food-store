@@ -16,12 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
    }
 
-   
-
-  
-
-
-
    function showTabContent (i=0) {                          //добавить класс эктив нужному элементу
       tabsContent[i].style.display = 'block';
       tabs[i].classList.add('tabheader__item_active');
@@ -45,10 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
    // Timer
 
    const deadline = '2021-12-31';                                    //вводим еобходимое нам время
-
+                                                              // endtime в самом конце в вызове!
    function getTimeRemaining(endtime) {                              //функция рассчитывющая сколько осталось до deadline
       const t = Date.parse(endtime) - Date.parse(new Date()),        // total - итог
-         days = Math.floor( (t/(1000*60*60*24)) ),                   //рассчет месяцы, дни, часы, минуты
+         days = Math.floor( t/(1000*60*60*24) ),                     //рассчет месяцы, дни, часы, минуты
          seconds = Math.floor( (t/1000) % 60 ),
          minutes = Math.floor( (t/1000/60) % 60 ),
          hours = Math.floor( (t/(1000*60*60) % 24) );
@@ -62,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
    }
 
-   function getZero(num){                                           //проверяем на наличие нулей
+   function getZero(num){                                            //проверяем на наличие нулей
       if (num >= 0 && num < 10) { 
          return '0' + num;
       } else {
@@ -70,14 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
    }
 
-   function setClock(selector, endtime) {                          //само взаимодействие со страницей
+   function setClock(selector, endtime) {                           //само взаимодействие со страницей
 
-      const timer = document.querySelector(selector),              //забираем с html нужные значения по селектору
+      const timer = document.querySelector(selector),               //забираем с html нужные значения по селектору
             days = timer.querySelector("#days"),                     
             hours = timer.querySelector('#hours'),
             minutes = timer.querySelector('#minutes'),
             seconds = timer.querySelector('#seconds'),
-            timeInterval = setInterval(updateClock, 1000);             //обновляем таймер каждую секунду
+            timeInterval = setInterval(updateClock, 1000);          //обновляем таймер каждую секунду
 
       updateClock();                                                //вызываем следующую функцию, чтобы при обновлении стр не было задержек
 
@@ -222,8 +216,71 @@ document.addEventListener('DOMContentLoaded', () => {
   ).render();                                                       //все, получаем карточки без html
 
 
+   //Forms - отправка и получение данных с сервера
+
+   const forms = document.querySelectorAll('form');
+
+   const message = {                                 //сообщения для выведения пользователю о статусе
+      loading: 'Загрузка...',
+      sucsess: 'Спасибо! Скоро мы с вами свяжемся',
+      failure: 'Что-то пошло не так...',
+   }
+
+   forms.forEach(item => {                          //под ф-ии подвязать форму postData
+      postData(item);
+   });
 
 
+
+
+   function postData(form) {
+      form.addEventListener('submit', (e) => {       //при отправке формы
+         e.preventDefault();                         //отключение стандартного поведения
+
+         let statusMessege = document.createElement('div'); //создание дива для сообщений message
+         statusMessege.classList.add('status');
+         statusMessege.textContent = message.loading;
+         form.appendChild(statusMessege);                 //выведение сообщения 
+
+         const request = new XMLHttpRequest();       //запрос на сервер, 
+         request.open('POST', 'server.php');         //указание пути
+         
+         /* //то, что ниже - для передачи файла (formData), но ломает код!
+         // request.setRequestHeader('Content-type', 'multipart/form-data');  
+         const formData = new FormData(form); */
+
+
+         //а вот для JSON нужен
+         request.setRequestHeader('Content-type', 'application/json');
+         const formData = new FormData(form);  
+
+         const object = {};                        //для переведения в JSON
+         formData.forEach(function(value, key){
+            object[key] = value;
+         });
+
+         const json = JSON.stringify(object);
+
+         //если formData
+         /* request.send(formData);                     //отправка запроса */
+
+         request.send(json);                        //отправка запроса
+
+
+         request.addEventListener('load', () => {    //обр. событ для отправки запроса
+            if (request.status === 200) {
+               console.log(request.response);
+               statusMessege.textContent = message.sucsess;  //сообщение, когда все готово  
+               form.reset();                                 //очистить форму
+               setTimeout(() => {
+                  statusMessege.remove();                   //убрать сообщение
+               }, 2000);
+            }  else {
+               statusMessege.textContent = message.failure; //если неудачно-сообщение
+            }
+         });
+      });
+   }
 
 
 
