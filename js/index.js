@@ -234,20 +234,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-   function postData(form) {
+   /* function postData(form) {                      //функция отправки данных
       form.addEventListener('submit', (e) => {       //при отправке формы
          e.preventDefault();                         //отключение стандартного поведения
 
          let statusMessege = document.createElement('img'); //создание дива для сообщений message или img для картинки
-         /* statusMessege.classList.add('status'); //до */
+         // statusMessege.classList.add('status'); //до 
+
+
          statusMessege.src = message.loading;       //после
-         /* statusMessege.textContent = message.loading;   // до*/
+         // statusMessege.textContent = message.loading;   // до
          statusMessege.style.cssText = `
             display: block;
             margin: 0 auto;
             margin-top: 15px;
          `;                                          //можно в css добавить стили, а здесь просто добавлять класс
-         /* form.appendChild(statusMessege);                 //выведение сообщения */ 
+         // form.appendChild(statusMessege);                 //выведение сообщения  
          form.insertAdjacentElement('afterend', statusMessege);
 
 
@@ -255,13 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
          const request = new XMLHttpRequest();       //запрос на сервер, 
          request.open('POST', 'server.php');         //указание пути
          
-         /* //то, что ниже - для передачи файла (formData), но ломает код!
-         // request.setRequestHeader('Content-type', 'multipart/form-data');  
-         const formData = new FormData(form); */
+         // то, что ниже - для передачи файла (formData), но ломает код!
+         // // request.setRequestHeader('Content-type', 'multipart/form-data');  
+         //const formData = new FormData(form); 
 
 
-         //а вот для JSON нужен
-         request.setRequestHeader('Content-type', 'application/json');
+         
+         request.setRequestHeader('Content-type', 'application/json');   //а вот для JSON нужен
          const formData = new FormData(form);  
 
          const object = {};                        //для переведения в JSON
@@ -272,28 +274,67 @@ document.addEventListener('DOMContentLoaded', () => {
          const json = JSON.stringify(object);
 
          //если formData
-         /* request.send(formData);                     //отправка запроса */
+         // request.send(formData);                     //отправка запроса 
 
-         request.send(json);                        //отправка запроса
+         request.send(json);                        //отправка запроса json
 
 
          request.addEventListener('load', () => {    //обр. событ для отправки запроса
             if (request.status === 200) {
                console.log(request.response);
-               /* statusMessege.textContent = message.sucsess;  //сообщение, когда все готово */  
-               showThanksModal(message.sucsess);             //создали ф-ю в след шаге
+               // // statusMessege.textContent = message.sucsess;  //сообщение, когда все готово   
+               showThanksModal(message.sucsess);             //создали ф-ю в след шаге - сообщение, когда все готово
                form.reset();                                 //очистить форму
-               /* setTimeout(() => {
-                  statusMessege.remove();                   //убрать сообщение
-               }, 2000);   в след пункте убираем таймаут//*/
-               statusMessege.remove();
+               // // setTimeout(() => {
+               // //   statusMessege.remove();                   //убрать сообщение
+               // // }, 2000);   в след пункте убираем таймаут//
+               statusMessege.remove();                        //убрать сообщение
             }  else {
-               /* statusMessege.textContent = message.failure; //если неудачно-сообщение */
-               showThanksModal(message.failure);           //создали ф-ю в след шаге
+               // // statusMessege.textContent = message.failure; //если неудачно-сообщение 
+               showThanksModal(message.failure);           //создали ф-ю в след шаге - сообщение, если неудачно
             }
          });
       });
-   }
+   } */
+
+   // переписанная функция postData с помощью API, все пояснения выше
+
+   function postData(form) {
+      form.addEventListener('submit', (e) => {
+          e.preventDefault();
+
+          let statusMessage = document.createElement('img');
+          statusMessage.src = message.loading;
+          statusMessage.style.cssText = `
+              display: block;
+              margin: 0 auto;
+          `;
+          form.insertAdjacentElement('afterend', statusMessage);
+      
+          const formData = new FormData(form);
+
+          const object = {};
+          formData.forEach(function(value, key){
+              object[key] = value;
+          });
+
+          fetch('server.php', {                            // добавляем fetch, используем промисы
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(object)
+          }).then(data => {
+              console.log(data);
+              showThanksModal(message.success);
+              statusMessage.remove();
+          }).catch(() => {
+              showThanksModal(message.failure);
+          }).finally(() => {
+              form.reset();
+          });
+      });
+  }
 
 
    //~Красивое благодарсвенное окно
