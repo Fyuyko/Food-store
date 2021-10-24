@@ -565,13 +565,17 @@ document.addEventListener('DOMContentLoaded', () => {
         dots.push(dot);  //добавляем значения, были активными
     }
 
-
+   function deliteNotDigits(str) {
+      return +str.replace(/\D/g, '');
+   }
 
    next.addEventListener('click', () => {
-      if (offset == (+width.slice(0, width.length - 2) * (slides.length - 1))) {
-         offset = 0;          //если дошли до конца, возвр в начало
+      /*if (offset == (+width.slice(0, width.length - 2) * (slides.length - 1))) {
+         offset = 0;          //если дошли до конца, возвр в начало */
+      if (offset == deliteNotDigits(width) * (slides.length - 1)) { //исп регулярные выражения, чуть выше в функции описано
+         offset = 0;   
       } else {
-         offset += +width.slice(0, width.length - 2); //если нет смещаемся дальше
+         offset += deliteNotDigits(width); //если нет смещаемся дальше
       }
 
       slidesField.style.transform = `translateX(-${offset}px)`; //для сдвига в лево в пх
@@ -594,9 +598,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
    prev.addEventListener('click', () => {  //для сдвига в право
       if (offset == 0) {                  //если первый слайд
-         offset = +width.slice(0, width.length - 2) * (slides.length - 1); //смещ к последнему
+         /* offset = +width.slice(0, width.length - 2) * (slides.length - 1); //смещ к последнему */
+         offset = deliteNotDigits(width) * (slides.length - 1);
       } else {
-         offset -= +width.slice(0, width.length - 2); //иначе на 1 сл назад
+         offset -= deliteNotDigits(width); //иначе на 1 сл назад
       }
 
       slidesField.style.transform = `translateX(-${offset}px)`;//для сдвига
@@ -624,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const slideTo = e.target.getAttribute('data-slide-to'); //тот самый атрибут
 
           slideIndex = slideTo;     //индекс равен выбранной точке
-          offset = +width.slice(0, width.length - 2) * (slideTo - 1); //запис ширину
+          offset = deliteNotDigits(width) * (slideTo - 1); //запис ширину
 
           slidesField.style.transform = `translateX(-${offset}px)`;  //запис перемещение
 
@@ -639,4 +644,122 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
    
+  // Calculator
+
+   const result = document.querySelector('.calculating__result span'); //для записи результата
+   let sex, height, weight, age, ratio;  
+   
+   if (localStorage.getItem('sex')) {        //если указали пол
+      sex = localStorage.getItem('sex');     //записываем его в локалСторедж
+   } else {                                  //если не записали
+      sex = 'female';                        //сами указываем
+      localStorage.setItem('sex', 'female'); //и записываем в локалСторедж
+   }
+
+   if (localStorage.getItem('ratio')) {        
+      ratio = localStorage.getItem('ratio');     
+   } else {                                  
+      ratio = '1.375';                        
+      localStorage.setItem('ratio', '1.375'); 
+   }
+
+   function initLocalSettings(selector, activeClass) {  //для записи в локалсторедж
+      const elements = document.querySelectorAll(selector); //забираем элем по селектору
+
+      elements.forEach(elem => {
+         elem.classList.remove(activeClass);  //убрать классы акт у элементов
+         if (elem.getAttribute('id') === localStorage.getItem('sex')) { //если id совпадает 
+            elem.classList.add(activeClass); //добавляем класс акт
+         }
+         if (elem.getAttribute('data-ratio') === localStorage.getItem('ratio')) {  //если совпадает data атрибут
+            elem.classList.add(activeClass); //добавляем класс актив
+         }
+      });
+   }
+
+   initLocalSettings('#gender', 'calculating__choose-item_active');
+   initLocalSettings('.calculating__choose_big', 'calculating__choose-item_active');
+
+   function calcTotal() {              //подсчет конечного результата
+      if (!sex || !height || !weight || !age || !ratio) {   //если не ввели какие-то данные
+            result.textContent = '____'; 
+            return;
+      }
+      if (sex === 'female') {  //если женщины
+            result.textContent = Math.round((447.6 + (9.2 * weight) + (3.1 * height) - (4.3 * age)) * ratio);   //используем формулу для рассчета используя полученные данные
+            //math - для округления до целого значения
+      } else {   //если мужчины
+            result.textContent = Math.round((88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age)) * ratio);
+      }
+   }
+
+   calcTotal(); //вызываем формулу
+
+   function getStaticInformation(selector, activeClass) { //сбор статичных данных, переключатели кнопочек
+         const elements = document.querySelectorAll(selector); //получаем в родителе все дивы (делегирование событий)
+
+         elements.forEach(elem => {           //перебираем элементы
+            elem.addEventListener('click', (e) => {     //при клике
+               if (e.target.getAttribute('data-ratio')) {  //если содержит атрибут
+                     ratio = +e.target.getAttribute('data-ratio'); //присваеваем
+                     localStorage('ratio', +e.target.getAttribute('data-ratio'));  //запоминаем, что вводили
+               } else {     //иначе
+                     sex = e.target.getAttribute('id');  //присваеваем
+                     localStorage('sex', e.target.getAttribute('id'));
+               }
+   
+               elements.forEach(elem => {
+                     elem.classList.remove(activeClass);  //сначала убираем у всех класс эктив
+               });
+   
+               e.target.classList.add(activeClass);  //добавляем класс кликнутому элементу
+   
+               calcTotal();  //еще раз вызываем 1 функцию
+            });
+         });
+   }
+
+   getStaticInformation('#gender', 'calculating__choose-item_active'); //вызов для пола
+   getStaticInformation('.calculating__choose_big', 'calculating__choose-item_active');  //вызов для активности
+
+   function getDynamicInformation(selector) {        //для динамических элементов
+         const input = document.querySelector(selector);  //забираем опредленный элемент
+
+         input.addEventListener('input', () => {       //при инпуте (вводе)
+            
+            if (input.value.match(/\D/g)) {           //если не цифра
+               input.style.border = 'solid red';      //красная рамка
+            } else if (input.value.match(/\d/g)) {    //все правильно-зеленый
+               input.style.border = 'solid green';
+            } else {                                  //ничего-ничего
+               input.style.border = 'none';
+            }
+            
+            
+            
+            switch(input.getAttribute('id')) {  //смотрим чем является данные по id
+               case "height":                    //если рост
+                     height = +input.value;      //записываем введеные пользователем данные
+                     break;
+               case "weight":
+                     weight = +input.value;
+                     break;
+               case "age":
+                     age = +input.value;
+                     break;
+            }
+
+            calcTotal(); //вызываем несколько раз, чтобы проссчитался, когда будут введены все данные
+         });
+   }
+
+   getDynamicInformation('#height');   // выводим для разных селекторов
+   getDynamicInformation('#weight');
+   getDynamicInformation('#age');
+
+
+
+
+
+
 });
